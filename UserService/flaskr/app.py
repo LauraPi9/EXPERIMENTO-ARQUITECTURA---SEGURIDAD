@@ -23,7 +23,7 @@ def add_urls(app):
     api = Api(app)
 
     api.add_resource(LoginView, "/login")
-    api.add_resource(LoginListView, "/logins") # lista de logins de un usuario, se le pasa el id del usuario como query param, ej: /logins?user_id=1
+    api.add_resource(LoginListView, "/logins") 
     api.add_resource(UserView, "/users")
 
 app = create_flask_app()

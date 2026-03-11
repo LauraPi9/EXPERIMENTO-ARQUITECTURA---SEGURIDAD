@@ -9,7 +9,12 @@ class User (db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(128), nullable=False)
-    logins = db.relationship('UserLogin', cascade='all, delete, delete-orphan')
+    
+    logins = db.relationship(
+        'UserLogin',
+        back_populates='user',
+        cascade='all, delete, delete-orphan'
+    )
 
 class UserLogin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -26,3 +31,10 @@ class UserLoginSchema(SQLAlchemyAutoSchema):
         load_instance = True
     timestamp = fields.DateTime()
     user = fields.Nested('UserSchema', exclude=('logins',))
+    
+    
+class UserSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = User
+        load_instance = True
+    logins = fields.Nested(UserLoginSchema, many=True, exclude=('user',)) ## 
