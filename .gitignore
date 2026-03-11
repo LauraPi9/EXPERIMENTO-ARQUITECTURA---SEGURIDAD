@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Flask instance / local db
+instance/
+*.db
