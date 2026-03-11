@@ -5,6 +5,7 @@ import requests
 
 from flaskr.models.models import db, User, UserLogin, UserLoginSchema
 
+
 class UserView(Resource):
 
     def post(self):
@@ -44,7 +45,6 @@ class UserView(Resource):
 class LoginView(Resource):
 
     def post(self):
-
         data = request.get_json()
 
         username = data.get("username")
@@ -56,17 +56,25 @@ class LoginView(Resource):
                 "message": "Username and password are required",
             }, 400
 
+        # Buscar usuario existente
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return {
+                "status_code": 404,
+                "message": "User does not exist",
+            }, 404
+
+        # Verificar contraseña
+        if user.password != password:
+            return {
+                "status_code": 401,
+                "message": "Incorrect password",
+            }, 401
+
         # Mock de datos si no vienen
         ip_address = data.get("ip_address") or "181.45.23.10"
         location = data.get("location") or "Colombia"
         timestamp = datetime.now(timezone.utc)
-
-        # Buscar o crear usuario
-        user = User.query.filter_by(username=username).first()
-        if not user:
-            user = User(username=username, password=password)
-            db.session.add(user)
-            db.session.commit()
 
         # Guardar login en base de datos
         new_login = UserLogin(
@@ -84,9 +92,9 @@ class LoginView(Resource):
             return {"status_code": 500, "message": "Error saving login"}, 500
 
         # Crear evento para el detector
-
         login_event = {
-            "user_id": username,
+            "user_id": user.id,
+            "username": user.username,
             "ip_address": ip_address,
             "location": location,
             "timestamp": timestamp.isoformat(),
