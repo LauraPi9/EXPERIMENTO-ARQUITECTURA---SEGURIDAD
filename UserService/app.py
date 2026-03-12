@@ -22,7 +22,7 @@ def create_flask_app():
 def add_urls(app):
     api = Api(app)
 
-    api.add_resource(LoginView, "/login")
+    api.add_resource(LoginView, "/login/<int:id_country_logged>")
     api.add_resource(LoginListView, "/logins") 
     api.add_resource(UserView, "/users")
 

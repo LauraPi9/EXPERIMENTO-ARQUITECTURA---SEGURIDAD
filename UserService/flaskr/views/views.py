@@ -43,8 +43,15 @@ class UserView(Resource):
 
 
 class LoginView(Resource):
+    ip_countries = [
+        {"id_country": 1, "address_ip": "191.90.10.25", "country": "Colombia"},
+        {"id_country": 2, "address_ip": "123.49.20.15", "country": "Bangladesh"},
+        {"id_country": 3, "address_ip": "43.10.20.30", "country": "China"},
+        {"id_country": 4, "address_ip": "163.90.25.14", "country": "Francia"},
+        {"id_country": 5, "address_ip": "212.181.141.45", "country": "Suecia"}
+    ]
 
-    def post(self):
+    def post(self, id_country_logged):
         data = request.get_json()
 
         username = data.get("username")
@@ -72,15 +79,21 @@ class LoginView(Resource):
             }, 401
 
         # Mock de datos si no vienen
-        ip_address = data.get("ip_address") or "181.45.23.10"
-        location = data.get("location") or "Colombia"
+        #ip_address = data.get("ip_address") or "181.45.23.10"
+
+        ip_found = None
+        for ip in self.ip_countries:
+            if ip["id_country"] == id_country_logged:
+                ip_found = ip
+
+        #location = data.get("location") or "Colombia"
         timestamp = datetime.now(timezone.utc)
 
         # Guardar login en base de datos
         new_login = UserLogin(
             user_id=user.id,
-            ip_address=ip_address,
-            location=location,
+            ip_address= ip_found["address_ip"],
+            location=ip_found["country"],
             timestamp=timestamp,
         )
 
@@ -95,8 +108,8 @@ class LoginView(Resource):
         login_event = {
             "user_id": user.id,
             "username": user.username,
-            "ip_address": ip_address,
-            "location": location,
+            "ip_address": ip_found["address_ip"],
+            "location": ip_found["country"],
             "timestamp": timestamp.isoformat(),
         }
 
@@ -123,7 +136,7 @@ class LoginView(Resource):
 
 
 class LoginListView(Resource):
-    ## Endpoint para obtener todos los logins (para pruebas)
+
     def get(self):
         logins = UserLogin.query.all()
         schema = UserLoginSchema(many=True)
