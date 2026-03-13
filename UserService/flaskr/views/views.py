@@ -3,7 +3,7 @@ from flask_restful import Resource
 from datetime import datetime, timezone
 import requests
 
-from flaskr.models.models import db, User, UserLogin, UserLoginSchema
+from flaskr.models.models import db, User, UserLogin, UserLoginSchema, StatusUser
 
 
 class UserView(Resource):
@@ -27,7 +27,7 @@ class UserView(Resource):
                 "message": "Username already exists",
             }, 400
 
-        new_user = User(username=username, password=password)
+        new_user = User(username=username, password=password,status=StatusUser.ACTIVE)
 
         try:
             db.session.add(new_user)
@@ -55,6 +55,7 @@ class LoginView(Resource):
         return {
             "id": login.id,
             "user_id": login.user_id,
+            "status_user": login.user.status,
             "ip_address": login.ip_address,
             "location": login.location,
             "timestamp": str(login.timestamp),
