@@ -51,6 +51,15 @@ class LoginView(Resource):
         {"id_country": 5, "address_ip": "212.181.141.45", "country": "Suecia"}
     ]
 
+    def login_to_dict(self,login):
+        return {
+            "id": login.id,
+            "user_id": login.user_id,
+            "ip_address": login.ip_address,
+            "location": login.location,
+            "timestamp": str(login.timestamp),
+        }
+
     def post(self, id_country_logged):
         data = request.get_json()
 
@@ -104,29 +113,46 @@ class LoginView(Resource):
             db.session.rollback()
             return {"status_code": 500, "message": "Error saving login"}, 500
 
-        # Crear evento para el detector
+        # Enviar evento al IntrusionDetector
+        logins_totals = UserLogin.query.all()
+        print(len(logins_totals))
+        #print(logins_totals)
+
+        start_index = len(logins_totals) -10
+        loggins_answer = []
+
+        if start_index < 0:
+            return {
+                "message": 'There are less than 10 loggins in the BD of User Loggins.'
+            }, 400 
+        else:
+            for x in logins_totals[start_index:]:
+                loggins_answer.append(self.login_to_dict(x))
+
+                # Crear evento para el detector
         login_event = {
             "user_id": user.id,
             "username": user.username,
             "ip_address": ip_found["address_ip"],
             "location": ip_found["country"],
             "timestamp": timestamp.isoformat(),
+            "loggins_list": loggins_answer
         }
+        schema = UserLoginSchema()
 
-        # Enviar evento al IntrusionDetector
         try:
             requests.post(
-                "http://localhost:5003/intrusion-event", json=login_event, timeout=5
+                "http://localhost:8002/intrusion-event", json=login_event, timeout=5
             )
+
         except Exception:
             # No fallar si el detector aún no existe
+            print("fallo el servicio")
             return {
-                "status_code": 200,
-                "message": "Login stored",
-                "event": login_event,
-            }, 200
+                "status_code": 400,
+                "message": "Unable to save intrusion-event. This doesn't mean that the loggin event, wasn't saved.",
+            }, 400
 
-        schema = UserLoginSchema()
         return {
             "status_code": 200,
             "message": "Login simulated successfully",
