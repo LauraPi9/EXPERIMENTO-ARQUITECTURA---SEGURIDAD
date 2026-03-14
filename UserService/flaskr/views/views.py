@@ -1,3 +1,5 @@
+from sqlalchemy import select
+
 from flask import request
 from flask_restful import Resource
 from datetime import datetime, timezone
@@ -41,6 +43,13 @@ class UserView(Resource):
             db.session.rollback()
             return {"status_code": 500, "message": "Error creating user"}, 500
 
+    def put(self):
+        data = request.get_json()
+        user_id = data.get('user_id')
+        search_user = db.session.get(User,user_id)
+
+        search_user.status = str(StatusUser.DEACTIVATED)
+        db.session.commit()
 
 class LoginView(Resource):
     ip_countries = [
@@ -55,7 +64,7 @@ class LoginView(Resource):
         return {
             "id": login.id,
             "user_id": login.user_id,
-            "status_user": login.user.status,
+            "status_user": str(login.user.status),
             "ip_address": login.ip_address,
             "location": login.location,
             "timestamp": str(login.timestamp),
@@ -115,22 +124,23 @@ class LoginView(Resource):
             return {"status_code": 500, "message": "Error saving login"}, 500
 
         # Enviar evento al IntrusionDetector
-        logins_totals = UserLogin.query.all()
+        logins_totals = db.session.scalars(select(UserLogin).filter_by(user_id=user.id)).all()
+
         print(len(logins_totals))
         #print(logins_totals)
+        start_index = len(logins_totals)
 
-        start_index = len(logins_totals) -10
+        if start_index < 10:
+            start_index = 0
+        else:
+            start_index = len(logins_totals) -10
+        
         loggins_answer = []
 
-        if start_index < 0:
-            return {
-                "message": 'There are less than 10 loggins in the BD of User Loggins.'
-            }, 400 
-        else:
-            for x in logins_totals[start_index:]:
-                loggins_answer.append(self.login_to_dict(x))
+        for x in logins_totals[start_index:]:
+            loggins_answer.append(self.login_to_dict(x))
 
-                # Crear evento para el detector
+        # Crear evento para el detector
         login_event = {
             "user_id": user.id,
             "username": user.username,
@@ -141,18 +151,18 @@ class LoginView(Resource):
         }
         schema = UserLoginSchema()
 
-        try:
-            requests.post(
-                "http://localhost:8002/intrusion-event", json=login_event, timeout=5
-            )
+        #try:
+        requests.post(
+            "http://localhost:8002/intrusion-event", json=login_event, timeout=5
+        )
 
-        except Exception:
+        """except Exception:
             # No fallar si el detector aún no existe
             print("fallo el servicio")
             return {
                 "status_code": 400,
                 "message": "Unable to save intrusion-event. This doesn't mean that the loggin event, wasn't saved.",
-            }, 400
+            }, 400 """
 
         return {
             "status_code": 200,
