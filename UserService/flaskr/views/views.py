@@ -161,18 +161,18 @@ class LoginView(Resource):
         }
         schema = UserLoginSchema()
 
-        #try:
-        requests.post(
-            "http://localhost:8002/intrusion-event", json=login_event, timeout=5
-        )
+        try:
+            requests.post(
+                "http://localhost:8002/intrusion-event", json=login_event, timeout=5
+            )
 
-        """except Exception:
+        except Exception:
             # No fallar si el detector aún no existe
             print("fallo el servicio")
             return {
                 "status_code": 400,
                 "message": "Unable to save intrusion-event. This doesn't mean that the loggin event, wasn't saved.",
-            }, 400 """
+            }, 400
 
         return {
             "status_code": 200,
