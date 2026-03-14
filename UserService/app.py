@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify, request
 from flask_restful import Api
 from flaskr.models.models import db
 from flaskr.views.views import LoginView, LoginListView, UserView
@@ -27,6 +27,12 @@ def add_urls(app):
     api.add_resource(UserView, "/users")
 
 app = create_flask_app()
+
+@app.route("/intrusion-event", methods=["POST"])
+def intrusion_event():
+    data = request.get_json()
+    print("RECIBIDO EN 8002:", data, flush=True)
+    return jsonify({"ok": True, "data": data}), 200
 
 db.init_app(app)
 db.create_all()

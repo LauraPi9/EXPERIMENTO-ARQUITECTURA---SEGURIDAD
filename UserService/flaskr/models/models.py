@@ -1,3 +1,5 @@
+import enum
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
@@ -5,10 +7,15 @@ from marshmallow import fields
 
 db = SQLAlchemy()
 
+class StatusUser(enum.Enum):
+    ACTIVE = "ACTIVE"
+    DEACTIVATED = "DEACTIVATED"
+
 class User (db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(128), nullable=False)
+    status = db.Column(db.Enum(StatusUser),nullable=True)
     
     logins = db.relationship(
         'UserLogin',
@@ -34,6 +41,8 @@ class UserLoginSchema(SQLAlchemyAutoSchema):
     
     
 class UserSchema(SQLAlchemyAutoSchema):
+    user = fields.Enum(StatusUser, by_value=True, allow_none=True)
+
     class Meta:
         model = User
         load_instance = True
