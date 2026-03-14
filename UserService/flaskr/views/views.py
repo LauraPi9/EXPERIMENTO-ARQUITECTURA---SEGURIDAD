@@ -29,7 +29,7 @@ class UserView(Resource):
                 "message": "Username already exists",
             }, 400
 
-        new_user = User(username=username, password=password,status=StatusUser.ACTIVE)
+        new_user = User(username=username, password=password,status=StatusUser.ACTIVE.value)
 
         try:
             db.session.add(new_user)
@@ -46,10 +46,20 @@ class UserView(Resource):
     def put(self):
         data = request.get_json()
         user_id = data.get('user_id')
+        new_status = data.get('status')
         search_user = db.session.get(User,user_id)
 
-        search_user.status = str(StatusUser.DEACTIVATED)
-        db.session.commit()
+        if new_status == 'ACTIVE':
+            search_user.status = StatusUser.ACTIVE.value
+            db.session.commit()
+            return {"message": "status has been changed to: " + new_status}, 200
+        elif new_status == 'DEACTIVATED':
+            search_user.status = StatusUser.DEACTIVATED.value
+            db.session.commit()
+            return {"message": "status has been changed to: " + new_status}, 200
+        else:  
+            db.session.rollback()
+            return {"status_code": 500, "message": "Not a valid status: Only values allowed are: ACTIVE and DEACTIVATED"}, 500
 
 class LoginView(Resource):
     ip_countries = [
