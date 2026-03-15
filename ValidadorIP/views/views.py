@@ -5,6 +5,9 @@ from dateutil import parser as date_parser
 from flask import request
 from flask_restful import Resource
 
+import requests
+from requests.exceptions import RequestException
+
 from modelos.models import db, UserEvent
 
 
@@ -106,11 +109,27 @@ class IntrusionEventView(Resource):
                 f"inicio de sesión desde ubicación distinta en menos de {MINUTOS_UMBRAL_INTRUSION} minutos.",
                 flush=True,
             )
-            # TODO: consumir servicio de UserService para desactivar usuario.
-            # PUT http://localhost:{USER_SERVICE_PORT}/users
-            # Body: {"user_id": user_id, "status": "DEACTIVATED"}
-            
-            pass
+
+            json_desactivar_usuario = {
+                "user_id": user_id,
+                "status": "DEACTIVATED",
+            }
+
+            try:
+                res_desactivacion = requests.put(
+                    "http://localhost:8082/users",
+                    json=json_desactivar_usuario,
+                    timeout=5
+                )
+                
+                res_desactivacion.raise_for_status()
+
+                print(res_desactivacion.json()["message"] or "Estado de usuario cambiado a: DESACTIVADO")
+            except RequestException:
+                return {
+                    "status_code": 400,
+                    "message": "Intrusión detectada, pero no se pudo notificar al servicio de Usuario."
+                }, 400
 
         tiempo_segundos = time.perf_counter() - t_inicio
         cumple_hipotesis = tiempo_segundos < SEGUNDOS_UMBRAL_HIPOTESIS
