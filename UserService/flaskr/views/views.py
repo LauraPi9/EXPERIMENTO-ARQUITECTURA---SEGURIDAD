@@ -99,13 +99,18 @@ class LoginView(Resource):
                 "status_code": 404,
                 "message": "User does not exist",
             }, 404
-
         # Verificar contraseña
         if user.password != password:
             return {
                 "status_code": 401,
                 "message": "Incorrect password",
             }, 401
+        
+        if user.status == StatusUser.DEACTIVATED:
+            return {
+                "status_code": 403,
+                "message": "User is blocked",
+            }, 403
 
         # Mock de datos si no vienen
         #ip_address = data.get("ip_address") or "181.45.23.10"
